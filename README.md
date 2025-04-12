@@ -9,6 +9,7 @@ Currently implemented:
   - Reset dock to default settings (`macos-tools dock reset`)
   - Lock dock size to prevent changes (`macos-tools dock lock-size`)
   - Unlock dock size to allow changes (`macos-tools dock unlock-size`)
+  - Enable/disable dock autohide (`macos-tools dock autohide [true|false]`)
 - Keyboard management
   - Disable press-and-hold for accented characters (`macos-tools keyboard disable-accent-hold`)
   - Enable press-and-hold for accented characters (`macos-tools keyboard enable-accent-hold`)
@@ -45,6 +46,12 @@ macos-tools dock lock-size
 
 # Unlock dock size
 macos-tools dock unlock-size
+
+# Enable dock autohide
+macos-tools dock autohide true
+
+# Disable dock autohide
+macos-tools dock autohide false
 
 # Keyboard management
 macos-tools keyboard --help

@@ -46,3 +46,49 @@ def reset():
         typer.echo("Successfully reset dock to default size")
     except subprocess.CalledProcessError as e:
         typer.echo(f"Error resetting dock: {e}", err=True)
+
+
+@dock_app.command()
+def lock_size():
+    """Lock the dock size to prevent changes."""
+    try:
+        # Make dock size immutable
+        subprocess.run(
+            [
+                "defaults",
+                "write",
+                "com.apple.dock",
+                "size-immutable",
+                "-bool",
+                "yes",
+            ],
+            check=True,
+        )
+        # Restart dock
+        subprocess.run(["killall", "Dock"], check=True)
+        typer.echo("Successfully locked dock size")
+    except subprocess.CalledProcessError as e:
+        typer.echo(f"Error locking dock size: {e}", err=True)
+
+
+@dock_app.command()
+def unlock_size():
+    """Unlock the dock size to allow changes."""
+    try:
+        # Make dock size mutable
+        subprocess.run(
+            [
+                "defaults",
+                "write",
+                "com.apple.dock",
+                "size-immutable",
+                "-bool",
+                "no",
+            ],
+            check=True,
+        )
+        # Restart dock
+        subprocess.run(["killall", "Dock"], check=True)
+        typer.echo("Successfully unlocked dock size")
+    except subprocess.CalledProcessError as e:
+        typer.echo(f"Error unlocking dock size: {e}", err=True)

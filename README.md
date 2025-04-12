@@ -7,6 +7,8 @@ A personal collection of CLI tools for managing macOS settings. This is a work i
 Currently implemented:
 - Dock management
   - Reset dock to default settings (`macos-tools dock reset`)
+  - Lock dock size to prevent changes (`macos-tools dock lock-size`)
+  - Unlock dock size to allow changes (`macos-tools dock unlock-size`)
 - Keyboard management
   - Disable press-and-hold for accented characters (`macos-tools keyboard disable-accent-hold`)
   - Enable press-and-hold for accented characters (`macos-tools keyboard enable-accent-hold`)
@@ -37,6 +39,12 @@ macos-tools dock --help
 
 # Reset dock to default settings
 macos-tools dock reset
+
+# Lock dock size
+macos-tools dock lock-size
+
+# Unlock dock size
+macos-tools dock unlock-size
 
 # Keyboard management
 macos-tools keyboard --help

@@ -40,7 +40,27 @@ Planned features:
 
 ## Installation
 
-### Using the install script (recommended)
+### Quick Install (recommended)
+```bash
+curl -fsSL https://raw.githubusercontent.com/ocolunga/mct/main/install.sh | bash
+```
+
+This will automatically:
+- Set up a `.mct` directory in your home folder
+- Install the required dependencies (including uv package manager)
+- Create a Python virtual environment
+- Install the package and make it available in your PATH
+
+After installation, restart your terminal or run:
+```bash
+source ~/.zshrc  # for zsh
+# or
+source ~/.bashrc  # for bash
+```
+
+### Manual Installation
+
+### Using the install script
 ```bash
 # Clone the repository
 git clone https://github.com/yourusername/macos-tools.git

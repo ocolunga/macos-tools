@@ -3,52 +3,60 @@ import subprocess
 
 keyboard_app = typer.Typer()
 
-
 @keyboard_app.command()
-def disable_accent_hold():
-    """Disable the press-and-hold feature for accented characters."""
+def hold():
+    """Enable key hold for accented characters."""
     try:
-        # Disable press-and-hold for accented characters
         subprocess.run(
-            [
-                "defaults",
-                "write",
-                "-g",
-                "ApplePressAndHoldEnabled",
-                "-bool",
-                "false",
-            ],
+            ["defaults", "write", "-g", "ApplePressAndHoldEnabled", "-bool", "true"],
             check=True,
         )
-        print("✅ Press-and-hold for accented characters has been disabled.")
-        print(
-            "Note: You may need to restart your applications for changes to take effect."
-        )
+        typer.echo("✓ Key hold for accents enabled")
+        typer.echo("Note: You may need to restart applications")
     except subprocess.CalledProcessError as e:
-        print(f"❌ Error disabling press-and-hold: {e}")
+        typer.echo(f"Error enabling key hold: {e}", err=True)
         raise typer.Exit(1)
 
 
 @keyboard_app.command()
-def enable_accent_hold():
-    """Enable the press-and-hold feature for accented characters."""
+def repeat():
+    """Enable key repeat (disables hold for accents)."""
     try:
-        # Enable press-and-hold for accented characters
         subprocess.run(
-            [
-                "defaults",
-                "write",
-                "-g",
-                "ApplePressAndHoldEnabled",
-                "-bool",
-                "true",
-            ],
+            ["defaults", "write", "-g", "ApplePressAndHoldEnabled", "-bool", "false"],
             check=True,
         )
-        print("✅ Press-and-hold for accented characters has been enabled.")
-        print(
-            "Note: You may need to restart your applications for changes to take effect."
-        )
+        typer.echo("✓ Key repeat enabled (hold for accents disabled)")
+        typer.echo("Note: You may need to restart applications")
     except subprocess.CalledProcessError as e:
-        print(f"❌ Error enabling press-and-hold: {e}")
+        typer.echo(f"Error enabling key repeat: {e}", err=True)
+        raise typer.Exit(1)
+
+
+@keyboard_app.command()
+def reset(
+    hold: bool = typer.Option(False, "-h", "--hold", help="Reset key hold to default (enabled)"),
+    all: bool = typer.Option(False, "-a", "--all", help="Reset all keyboard settings to defaults"),
+):
+    """Reset keyboard settings. Must specify -h (hold) or -a (all)."""
+    if not any([hold, all]):
+        typer.echo("Error: Must specify either -h (hold) or -a (all)")
+        raise typer.Exit(1)
+
+    try:
+        if hold or all:
+            # Reset press-and-hold to default (enabled)
+            subprocess.run(
+                ["defaults", "write", "-g", "ApplePressAndHoldEnabled", "-bool", "true"],
+                check=True,
+            )
+            typer.echo("✓ Key hold reset to default (enabled)")
+            
+        if all:
+            # Add more keyboard settings here as they are implemented
+            pass
+
+        typer.echo("Note: You may need to restart applications")
+    except subprocess.CalledProcessError as e:
+        typer.echo(f"Error resetting keyboard settings: {e}", err=True)
         raise typer.Exit(1)

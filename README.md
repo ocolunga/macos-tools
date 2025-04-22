@@ -29,11 +29,29 @@ Currently implemented:
   - `mct keyboard reset -h` - Reset key hold to default (enabled)
   - `mct keyboard reset -a` - Reset all keyboard settings
 
+### System Management
+- Touch ID for sudo:
+  - `mct system enable-touchid-sudo` - Enable Touch ID authentication for sudo
+  - `mct system restore-sudo` - Restore original sudo configuration
+
 Planned features:
-- Configuration file support (`~/.mct/config.toml`) for:
+- Configuration file support (`~/.config/mct/config.toml`) for:
   - Setting default values for commands
   - Storing preferred configurations
   - Batch applying multiple settings at once
+  - Example configuration:
+    ```toml
+    [dock]
+    default_size = 48
+    auto_hide = true
+    size_locked = false
+
+    [keyboard]
+    key_hold = true
+
+    [system]
+    touch_id_sudo = true
+    ```
 - More dock management options
 - System preferences management
 - And more...
@@ -101,6 +119,7 @@ pip install mct
 mct --help
 mct dock --help
 mct keyboard --help
+mct system --help
 
 # Dock Examples
 mct dock size 48          # Set dock size to 48
@@ -115,6 +134,10 @@ mct dock reset -s -h    # Reset both size and auto-hide
 mct keyboard hold      # Enable press-and-hold for accents
 mct keyboard repeat    # Enable key repeat (disable accents)
 mct keyboard reset -a  # Reset all keyboard settings
+
+# System Examples
+mct system enable-touchid-sudo  # Enable Touch ID for sudo
+mct system restore-sudo        # Restore original sudo config
 ```
 
 Note: Some commands may require restarting applications to take effect.

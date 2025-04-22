@@ -1,5 +1,5 @@
 [project]
-name = "macos-tools"
+name = "mct"
 version = "0.1.0"
 description = "MacOS configuration CLI tools"
 readme = "README.md"
@@ -7,7 +7,11 @@ requires-python = ">=3.9"
 dependencies = ["typer>=0.15.2"]
 
 [project.scripts]
-macos-tools = "macos_tools.cli:main"
+mct = "mct.cli:main"
 
 [dependency-groups]
 dev = ["mypy>=1.15.0", "ruff>=0.11.4"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

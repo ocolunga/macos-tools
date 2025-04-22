@@ -30,6 +30,10 @@ Currently implemented:
   - `mct keyboard reset -a` - Reset all keyboard settings
 
 Planned features:
+- Configuration file support (`~/.mct/config.toml`) for:
+  - Setting default values for commands
+  - Storing preferred configurations
+  - Batch applying multiple settings at once
 - More dock management options
 - System preferences management
 - And more...

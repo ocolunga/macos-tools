@@ -40,6 +40,7 @@ name = "mct"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "tomli" },
     { name = "typer" },
 ]
 
@@ -50,7 +51,10 @@ dev = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "typer", specifier = ">=0.15.2" }]
+requires-dist = [
+    { name = "tomli", specifier = ">=2.0.1" },
+    { name = "typer", specifier = ">=0.15.2" },
+]
 
 [package.metadata.requires-dev]
 dev = [

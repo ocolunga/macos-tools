@@ -1,4 +1,4 @@
-# macOS Tools (mct)
+# macOS Configuration Tools (mct)
 
 A personal collection of CLI tools for managing macOS settings through a simple, intuitive interface.
 

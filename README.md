@@ -1,18 +1,33 @@
-# macOS Tools
+# macOS Tools (mct)
 
-A personal collection of CLI tools for managing macOS settings. This is a work in progress and currently only has basic functionality implemented.
+A personal collection of CLI tools for managing macOS settings through a simple, intuitive interface.
 
 ## Features
 
 Currently implemented:
-- Dock management
-  - Reset dock to default settings (`macos-tools dock reset`)
-  - Lock dock size to prevent changes (`macos-tools dock lock-size`)
-  - Unlock dock size to allow changes (`macos-tools dock unlock-size`)
-  - Enable/disable dock autohide (`macos-tools dock autohide [true|false]`)
-- Keyboard management
-  - Disable press-and-hold for accented characters (`macos-tools keyboard disable-accent-hold`)
-  - Enable press-and-hold for accented characters (`macos-tools keyboard enable-accent-hold`)
+
+### Dock Management
+- Set dock size: `mct dock size <value>` (32-128)
+- Show current dock size: `mct dock size`
+- Auto-hide controls:
+  - `mct dock hide` - Enable auto-hide
+  - `mct dock show` - Disable auto-hide
+- Size lock controls:
+  - `mct dock lock` - Lock dock size
+  - `mct dock unlock` - Unlock dock size
+- Reset options:
+  - `mct dock reset -s` - Reset size to default (64)
+  - `mct dock reset -h` - Reset auto-hide to default (disabled)
+  - `mct dock reset -l` - Reset size lock to default (unlocked)
+  - `mct dock reset -a` - Reset all dock settings
+  
+### Keyboard Management
+- Key repeat controls:
+  - `mct keyboard hold` - Enable press-and-hold for accented characters
+  - `mct keyboard repeat` - Enable key repeat (disables accents)
+- Reset options:
+  - `mct keyboard reset -h` - Reset key hold to default (enabled)
+  - `mct keyboard reset -a` - Reset all keyboard settings
 
 Planned features:
 - More dock management options
@@ -22,46 +37,37 @@ Planned features:
 ## Installation
 
 ```bash
-# Install using pip
-pip install macos-tools
+# Install using uv (recommended)
+uv pip install mct
 
-# Or install using uv
-uv pip install macos-tools
+# Or install using pip
+pip install mct
 ```
 
-## Usage
+## Usage Examples
 
 ```bash
 # Show help
-macos-tools --help
+mct --help
+mct dock --help
+mct keyboard --help
 
-# Dock management
-macos-tools dock --help
+# Dock Examples
+mct dock size 48          # Set dock size to 48
+mct dock size            # Show current dock size
+mct dock hide           # Enable auto-hide
+mct dock show           # Disable auto-hide
+mct dock lock           # Lock dock size
+mct dock unlock         # Unlock dock size
+mct dock reset -s -h    # Reset both size and auto-hide
 
-# Reset dock to default settings
-macos-tools dock reset
-
-# Lock dock size
-macos-tools dock lock-size
-
-# Unlock dock size
-macos-tools dock unlock-size
-
-# Enable dock autohide
-macos-tools dock autohide true
-
-# Disable dock autohide
-macos-tools dock autohide false
-
-# Keyboard management
-macos-tools keyboard --help
-
-# Disable press-and-hold for accented characters
-macos-tools keyboard disable-accent-hold
-
-# Enable press-and-hold for accented characters
-macos-tools keyboard enable-accent-hold
+# Keyboard Examples
+mct keyboard hold      # Enable press-and-hold for accents
+mct keyboard repeat    # Enable key repeat (disable accents)
+mct keyboard reset -a  # Reset all keyboard settings
 ```
+
+Note: Some commands may require restarting applications to take effect.
 
 ## License
 

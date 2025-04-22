@@ -36,8 +36,34 @@ Planned features:
 
 ## Installation
 
+### Using the install script (recommended)
 ```bash
-# Install using uv (recommended)
+# Clone the repository
+git clone https://github.com/yourusername/macos-tools.git
+cd macos-tools
+
+# Make the script executable and run it
+chmod +x install.sh
+./install.sh
+```
+
+The install script will:
+- Create a `.mct` directory in your home folder
+- Set up a virtual environment using the system Python
+- Install the package in development mode
+- Add the package commands to your PATH
+
+After installation, restart your terminal or source your shell configuration file:
+```bash
+source ~/.zshrc  # for zsh
+# or
+source ~/.bashrc  # for bash
+```
+
+### Alternative installation methods
+
+```bash
+# Install using uv
 uv pip install mct
 
 # Or install using pip

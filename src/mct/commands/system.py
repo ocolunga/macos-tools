@@ -59,35 +59,54 @@ def enable_touchid_sudo():
         )
 
         if backup_exists:
-            typer.echo(
-                "\n⚠️  A backup file already exists at /etc/pam.d/sudo.bak"
-            )
-            typer.echo("\nPlease choose an option:")
-            typer.echo("1 - View the backup file contents")
-            typer.echo("2 - Continue (will replace existing backup)")
-            typer.echo("3 - Restore backup and then enable Touch ID")
-
-            choice = typer.prompt("\nEnter your choice (1-3)", type=int)
-
-            if choice == 1:
-                print_file_contents("/etc/pam.d/sudo.bak")
-                return
-            elif choice == 2:
-                # Create a new backup of the current file
-                subprocess.run(
-                    ["sudo", "cp", "/etc/pam.d/sudo", "/etc/pam.d/sudo.bak"],
-                    check=True,
+            while True:
+                typer.echo(
+                    "\n⚠️  A backup file already exists at /etc/pam.d/sudo.bak"
                 )
-            elif choice == 3:
-                # Restore backup first
-                subprocess.run(
-                    ["sudo", "cp", "/etc/pam.d/sudo.bak", "/etc/pam.d/sudo"],
-                    check=True,
+                typer.echo("\nPlease choose an option:")
+                typer.echo("0 - Do nothing and exit")
+                typer.echo("1 - View the backup file contents")
+                typer.echo("2 - Continue (will replace existing backup)")
+                typer.echo("3 - Restore backup and then enable Touch ID")
+
+                choice = typer.prompt(
+                    "\nEnter your choice (0-3)", type=int, default=0
                 )
-                typer.echo("✓ Original sudo PAM file has been restored")
-            else:
-                typer.echo("Invalid choice")
-                return
+
+                if choice == 0:
+                    typer.echo("Operation cancelled")
+                    return
+                elif choice == 1:
+                    print_file_contents("/etc/pam.d/sudo.bak")
+                    continue
+                elif choice == 2:
+                    # Create a new backup of the current file
+                    subprocess.run(
+                        [
+                            "sudo",
+                            "cp",
+                            "/etc/pam.d/sudo",
+                            "/etc/pam.d/sudo.bak",
+                        ],
+                        check=True,
+                    )
+                    break
+                elif choice == 3:
+                    # Restore backup first
+                    subprocess.run(
+                        [
+                            "sudo",
+                            "cp",
+                            "/etc/pam.d/sudo.bak",
+                            "/etc/pam.d/sudo",
+                        ],
+                        check=True,
+                    )
+                    typer.echo("✓ Original sudo PAM file has been restored")
+                    break
+                else:
+                    typer.echo("Invalid choice, please try again")
+                    continue
         else:
             # Create a backup of the original file
             subprocess.run(

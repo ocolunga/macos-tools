@@ -95,27 +95,28 @@ def unlock_size():
 
 
 @dock_app.command()
-def autohide(
-    enable: bool = typer.Argument(True, help="Enable or disable autohide"),
-):
-    """Enable or disable dock autohide."""
+def hide():
+    """Hide the dock automatically when unused."""
     try:
-        # Set dock autohide
         subprocess.run(
-            [
-                "defaults",
-                "write",
-                "com.apple.dock",
-                "autohide",
-                "-bool",
-                "true" if enable else "false",
-            ],
+            ["defaults", "write", "com.apple.dock", "autohide", "-bool", "true"],
             check=True,
         )
-        # Restart dock
         subprocess.run(["killall", "Dock"], check=True)
-        typer.echo(
-            f"Successfully {'enabled' if enable else 'disabled'} dock autohide"
-        )
+        typer.echo("Dock will now auto-hide")
     except subprocess.CalledProcessError as e:
-        typer.echo(f"Error setting dock autohide: {e}", err=True)
+        typer.echo(f"Error enabling dock auto-hide: {e}", err=True)
+
+
+@dock_app.command()
+def show():
+    """Keep the dock always visible."""
+    try:
+        subprocess.run(
+            ["defaults", "write", "com.apple.dock", "autohide", "-bool", "false"],
+            check=True,
+        )
+        subprocess.run(["killall", "Dock"], check=True)
+        typer.echo("Dock will stay visible")
+    except subprocess.CalledProcessError as e:
+        typer.echo(f"Error disabling dock auto-hide: {e}", err=True)

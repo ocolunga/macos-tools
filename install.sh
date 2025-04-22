@@ -15,8 +15,32 @@ done
 
 # Install uv if not present
 if ! command_exists uv; then
-    echo "Installing uv package manager..."
-    curl -LsSf https://astral.sh/uv/install.sh | sh
+    echo "mct (macOS Configuration Tools) is a command-line tool for managing macOS settings."
+    echo "It helps you configure various aspects of your macOS system through simple commands."
+    echo "Project: https://github.com/ocolunga/mct"
+    echo ""
+    echo "This tool requires uv, a fast Python package installer and resolver."
+    echo "Project: https://github.com/astral-sh/uv"
+    echo ""
+    if ! command_exists uv; then
+        if command_exists brew; then
+            echo "Would you like to install uv using Homebrew? [Y/n]"
+            read -r response
+            if [[ "$response" =~ ^[Nn]$ ]]; then
+                echo "Installation cancelled"
+                exit 1
+            fi
+            brew install uv
+        else
+            echo "Would you like to install uv using the official installer? [Y/n]"
+            read -r response
+            if [[ "$response" =~ ^[Nn]$ ]]; then
+                echo "Installation cancelled"
+                exit 1
+            fi
+            curl -LsSf https://astral.sh/uv/install.sh | sh
+        fi
+    fi
 fi
 
 # Create .mct directory in home if it doesn't exist
@@ -24,10 +48,25 @@ MCT_DIR="$HOME/.mct"
 mkdir -p "$MCT_DIR"
 mkdir -p "$MCT_DIR/bin"  # Create a separate bin directory for our scripts
 
-# Clone the repository if running via curl
+# Handle repository
 REPO_DIR="$MCT_DIR/repo"
-if [ ! -d "$REPO_DIR" ]; then
-    echo "Cloning mct repository..."
+if [ -d "$REPO_DIR" ]; then
+    echo "mct is already installed. Would you like to update it? [Y/n]"
+    read -r response
+    if [[ "$response" =~ ^[Nn]$ ]]; then
+        echo "Update cancelled"
+        exit 1
+    fi
+    
+    echo "Updating mct..."
+    # Remove existing virtual environment
+    rm -rf "$MCT_DIR/venv"
+    # Update repository
+    cd "$REPO_DIR"
+    git fetch origin
+    git reset --hard origin/main
+else
+    echo "Installing mct..."
     git clone https://github.com/ocolunga/mct.git "$REPO_DIR"
     cd "$REPO_DIR"
 fi
@@ -75,4 +114,6 @@ if ! grep -q "$MCT_BIN" "$SHELL_CONFIG"; then
     echo "export PATH=\"$MCT_BIN:\$PATH\"" >> "$SHELL_CONFIG"
     echo "Installation complete! Please restart your terminal or run:"
     echo "source $SHELL_CONFIG"
+else
+    echo "Update complete!"
 fi

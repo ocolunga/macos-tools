@@ -1,7 +1,5 @@
 import subprocess
 import typer
-import os
-import pkg_resources
 
 system_app = typer.Typer()
 
@@ -137,10 +135,7 @@ def touchid():
 @system_app.command()
 def reset(
     touchid: bool = typer.Option(
-        False,
-        "-t",
-        "--touchid",
-        help="Reset Touch ID sudo configuration",
+        False, "-t", "--touchid", help="Reset Touch ID sudo configuration"
     ),
     all: bool = typer.Option(
         False, "-a", "--all", help="Reset all system settings to defaults"
@@ -176,8 +171,8 @@ def reset(
             while True:
                 typer.echo("\nPlease choose an option:")
                 typer.echo("0 - Do nothing and exit")
-                typer.echo("1 - Restore from stored backup")
-                typer.echo("2 - Restore default macOS configuration")
+                typer.echo("1 - View the backup file contents")
+                typer.echo("2 - Restore from stored backup")
 
                 choice = typer.prompt(
                     "\nEnter your choice (0-2)", type=int, default=0
@@ -187,6 +182,22 @@ def reset(
                     typer.echo("Operation cancelled")
                     return
                 elif choice == 1:
+                    # Check if backup exists
+                    result = subprocess.run(
+                        ["test", "-f", "/etc/pam.d/sudo.bak"],
+                        capture_output=True,
+                        text=True,
+                    )
+
+                    if result.returncode != 0:
+                        typer.echo(
+                            "No backup file found at /etc/pam.d/sudo.bak"
+                        )
+                        return
+
+                    print_file_contents("/etc/pam.d/sudo.bak")
+                    continue
+                elif choice == 2:
                     # Check if backup exists
                     result = subprocess.run(
                         ["test", "-f", "/etc/pam.d/sudo.bak"],
@@ -214,42 +225,6 @@ def reset(
                         "✓ Touch ID sudo configuration has been reset from backup"
                     )
                     break
-                elif choice == 2:
-                    # Get the path to the default sudo file
-                    default_sudo = pkg_resources.resource_filename(
-                        "mct", "defaults/sudo"
-                    )
-
-                    if not os.path.exists(default_sudo):
-                        typer.echo(
-                            "Error: Default sudo configuration file not found"
-                        )
-                        raise typer.Exit(1)
-
-                    # Create a backup of the current file
-                    subprocess.run(
-                        [
-                            "sudo",
-                            "cp",
-                            "/etc/pam.d/sudo",
-                            "/etc/pam.d/sudo.bak",
-                        ],
-                        check=True,
-                    )
-
-                    # Restore the default configuration
-                    subprocess.run(
-                        ["sudo", "cp", default_sudo, "/etc/pam.d/sudo"],
-                        check=True,
-                    )
-
-                    typer.echo(
-                        "✓ Default sudo PAM configuration has been restored"
-                    )
-                    typer.echo(
-                        "✓ Original file backed up as /etc/pam.d/sudo.bak"
-                    )
-                    break
                 else:
                     typer.echo("Invalid choice, please try again")
                     continue
@@ -260,47 +235,4 @@ def reset(
 
     except subprocess.CalledProcessError as e:
         typer.echo(f"Error resetting system settings: {e}", err=True)
-        raise typer.Exit(1)
-
-
-@system_app.command()
-def default():
-    """Restore the default macOS sudo PAM configuration."""
-    try:
-        # Show warning and get confirmation
-        typer.echo("\n⚠️  This operation will:")
-        typer.echo("  1. Restore the default macOS sudo PAM configuration")
-        typer.echo(
-            "  2. Remove any custom configurations (including Touch ID)"
-        )
-        typer.echo("  3. Require sudo privileges to make these changes")
-
-        if not typer.confirm("\nDo you want to proceed?", default=False):
-            typer.echo("Operation cancelled")
-            return
-
-        # Get the path to the default sudo file
-        default_sudo = pkg_resources.resource_filename("mct", "defaults/sudo")
-
-        if not os.path.exists(default_sudo):
-            typer.echo("Error: Default sudo configuration file not found")
-            raise typer.Exit(1)
-
-        # Create a backup of the current file
-        subprocess.run(
-            ["sudo", "cp", "/etc/pam.d/sudo", "/etc/pam.d/sudo.bak"],
-            check=True,
-        )
-
-        # Restore the default configuration
-        subprocess.run(
-            ["sudo", "cp", default_sudo, "/etc/pam.d/sudo"],
-            check=True,
-        )
-
-        typer.echo("✓ Default sudo PAM configuration has been restored")
-        typer.echo("✓ Original file backed up as /etc/pam.d/sudo.bak")
-
-    except subprocess.CalledProcessError as e:
-        typer.echo(f"Error restoring default configuration: {e}", err=True)
         raise typer.Exit(1)

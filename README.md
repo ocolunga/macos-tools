@@ -31,8 +31,9 @@ Currently implemented:
 
 ### System Management
 - Touch ID for sudo:
-  - `mct system enable-touchid-sudo` - Enable Touch ID authentication for sudo
-  - `mct system restore-sudo` - Restore original sudo configuration
+  - `mct system touchid` - Enable Touch ID authentication for sudo with interactive backup management
+  - `mct system reset -t` - Reset Touch ID sudo configuration from backup
+  - `mct system reset -a` - Reset all system settings to defaults
 
 Planned features:
 - Configuration file support (`~/.config/mct/config.toml`) for:
@@ -68,6 +69,7 @@ This will automatically:
 - Install the required dependencies (including uv package manager)
 - Create a Python virtual environment
 - Install the package and make it available in your PATH
+- Create wrapper scripts for all commands
 
 After installation, restart your terminal or run:
 ```bash
@@ -81,8 +83,8 @@ source ~/.bashrc  # for bash
 ### Using the install script
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/macos-tools.git
-cd macos-tools
+git clone https://github.com/ocolunga/mct.git
+cd mct
 
 # Make the script executable and run it
 chmod +x install.sh
@@ -93,6 +95,7 @@ The install script will:
 - Create a `.mct` directory in your home folder
 - Set up a virtual environment using the system Python
 - Install the package in development mode
+- Create wrapper scripts for all commands
 - Add the package commands to your PATH
 
 After installation, restart your terminal or source your shell configuration file:
@@ -136,8 +139,9 @@ mct keyboard repeat    # Enable key repeat (disable accents)
 mct keyboard reset -a  # Reset all keyboard settings
 
 # System Examples
-mct system enable-touchid-sudo  # Enable Touch ID for sudo
-mct system restore-sudo        # Restore original sudo config
+mct system touchid           # Enable Touch ID for sudo with interactive backup
+mct system reset -t         # Reset Touch ID sudo configuration from backup
+mct system reset -a         # Reset all system settings to defaults
 ```
 
 Note: Some commands may require restarting applications to take effect.

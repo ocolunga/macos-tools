@@ -21,8 +21,8 @@ def print_file_contents(file_path):
         typer.echo(f"Error reading file: {e}", err=True)
 
 
-@system_app.command(name="enable-touchid-sudo")
-def enable_touchid_sudo():
+@system_app.command()
+def touchid():
     """Enable Touch ID authentication for sudo commands."""
     try:
         # Show initial warning and get confirmation
@@ -132,38 +132,107 @@ def enable_touchid_sudo():
         raise typer.Exit(1)
 
 
-@system_app.command(name="restore-sudo")
-def restore_sudo():
-    """Restore the original sudo PAM file from backup."""
+@system_app.command()
+def reset(
+    touchid: bool = typer.Option(
+        False, "-t", "--touchid", help="Reset Touch ID sudo configuration"
+    ),
+    all: bool = typer.Option(
+        False, "-a", "--all", help="Reset all system settings to defaults"
+    ),
+):
+    """Reset system settings. Must specify -t (touchid) or -a (all)."""
+    if not any([touchid, all]):
+        typer.echo("Error: Must specify either -t (touchid) or -a (all)")
+        raise typer.Exit(1)
+
     try:
-        # Show warning and get confirmation
-        typer.echo("\n⚠️  This operation will:")
-        typer.echo("  1. Check if a backup file exists")
-        typer.echo("  2. Restore /etc/pam.d/sudo from backup")
-        typer.echo("  3. Remove Touch ID authentication for sudo")
-        typer.echo("  4. Require sudo privileges to make these changes")
+        if touchid or all:
+            # Show warning and get confirmation first
+            typer.echo("\n⚠️  This operation will:")
+            typer.echo("  1. Remove Touch ID authentication from sudo")
+            typer.echo("  2. Require sudo privileges to make these changes")
 
-        if not typer.confirm("\nDo you want to proceed?", default=False):
-            typer.echo("Operation cancelled")
-            return
+            if not typer.confirm("\nDo you want to proceed?", default=False):
+                typer.echo("Operation cancelled")
+                return
 
-        # Check if backup exists
-        result = subprocess.run(
-            ["test", "-f", "/etc/pam.d/sudo.bak"],
-            capture_output=True,
-        )
+            # Check if Touch ID is enabled
+            result = subprocess.run(
+                ["grep", "auth sufficient pam_tid.so", "/etc/pam.d/sudo"],
+                capture_output=True,
+                text=True,
+            )
 
-        if result.returncode != 0:
-            typer.echo("No backup file found at /etc/pam.d/sudo.bak")
-            return
+            if result.returncode != 0:
+                typer.echo("Touch ID is not enabled in sudo configuration")
+                return
 
-        # Restore the backup file
-        subprocess.run(
-            ["sudo", "cp", "/etc/pam.d/sudo.bak", "/etc/pam.d/sudo"],
-            check=True,
-        )
-        typer.echo("✓ Original sudo PAM file has been restored")
+            while True:
+                typer.echo("\nPlease choose an option:")
+                typer.echo("0 - Do nothing and exit")
+                typer.echo("1 - View the backup file contents")
+                typer.echo("2 - Restore from stored backup")
+
+                choice = typer.prompt(
+                    "\nEnter your choice (0-2)", type=int, default=0
+                )
+
+                if choice == 0:
+                    typer.echo("Operation cancelled")
+                    return
+                elif choice == 1:
+                    # Check if backup exists
+                    result = subprocess.run(
+                        ["test", "-f", "/etc/pam.d/sudo.bak"],
+                        capture_output=True,
+                        text=True,
+                    )
+
+                    if result.returncode != 0:
+                        typer.echo(
+                            "No backup file found at /etc/pam.d/sudo.bak"
+                        )
+                        return
+
+                    print_file_contents("/etc/pam.d/sudo.bak")
+                    continue
+                elif choice == 2:
+                    # Check if backup exists
+                    result = subprocess.run(
+                        ["test", "-f", "/etc/pam.d/sudo.bak"],
+                        capture_output=True,
+                        text=True,
+                    )
+
+                    if result.returncode != 0:
+                        typer.echo(
+                            "No backup file found at /etc/pam.d/sudo.bak"
+                        )
+                        return
+
+                    # Restore the backup file
+                    subprocess.run(
+                        [
+                            "sudo",
+                            "cp",
+                            "/etc/pam.d/sudo.bak",
+                            "/etc/pam.d/sudo",
+                        ],
+                        check=True,
+                    )
+                    typer.echo(
+                        "✓ Touch ID sudo configuration has been reset from backup"
+                    )
+                    break
+                else:
+                    typer.echo("Invalid choice, please try again")
+                    continue
+
+        if all:
+            # Add more system settings here as they are implemented
+            pass
 
     except subprocess.CalledProcessError as e:
-        typer.echo(f"Error restoring sudo PAM file: {e}", err=True)
+        typer.echo(f"Error resetting system settings: {e}", err=True)
         raise typer.Exit(1)

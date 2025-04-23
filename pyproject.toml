@@ -1,10 +1,11 @@
 [project]
 name = "mct"
 version = "0.1.0"
-description = "MacOS configuration CLI tools"
+authors = [{ name = "Oscar Colunga", email = "oscar@ancile.dev" }]
+description = "macOS Configuration Tools"
 readme = "README.md"
-requires-python = ">=3.9"
-dependencies = ["typer>=0.15.2", "tomli>=2.0.1"]
+requires-python = ">=3.8"
+dependencies = ["typer>=0.9.0"]
 
 [project.scripts]
 mct = "mct.cli:main"
@@ -15,3 +16,9 @@ dev = ["mypy>=1.15.0", "ruff>=0.11.4"]
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/mct"]
+
+[tool.hatch.build.targets.wheel.shared-data]
+"src/mct/defaults" = "mct/defaults"

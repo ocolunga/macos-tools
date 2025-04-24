@@ -51,12 +51,21 @@ jobs:
           sed -i "s|url \".*\"|url \"$URL\"|" "$FORMULA_FILE"
           sed -i "s|sha256 \".*\"|sha256 \"$SHA\"|" "$FORMULA_FILE"
 
-          # Install Homebrew and update Python dependencies
-          cd tap
+          # Install Homebrew and set up the environment
           /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+          echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> $HOME/.bashrc
           eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-          brew update
-          brew update-python-resources Formula/mct.rb
+          
+          # Install dependencies
+          sudo apt-get update
+          sudo apt-get install -y build-essential
+          brew developer on
+          brew install gcc
+          
+          # Update python dependencies in the formula
+          cd tap
+          brew install --only-dependencies ./Formula/mct.rb || true
+          brew update-python-resources --package-name=mct --exclude-packages="" ./Formula/mct.rb || true
           
           # Test installation from the formula
           brew install --build-from-source ./Formula/mct.rb

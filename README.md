@@ -6,6 +6,9 @@ A personal collection of CLI tools for managing macOS settings through a simple,
 
 Currently implemented:
 
+### General
+- Check version: `mct --version` or `mct -v` - Display the installed version
+
 ### Dock Management
 - Set dock size: `mct dock size <value>` (32-128)
 - Show current dock size: `mct dock size`
@@ -59,7 +62,18 @@ Planned features:
 
 ## Installation
 
-### Quick Install (recommended)
+### Using Homebrew (recommended)
+```bash
+# Add the tap repository
+brew tap ocolunga/mct
+
+# Install mct
+brew install mct
+```
+
+### Alternative Installation Methods
+
+### Quick Install Script
 ```bash
 curl -fsSL https://raw.githubusercontent.com/ocolunga/mct/main/install.sh | bash
 ```
@@ -123,6 +137,9 @@ mct --help
 mct dock --help
 mct keyboard --help
 mct system --help
+
+# Check version
+mct --version
 
 # Dock Examples
 mct dock size 48          # Set dock size to 48

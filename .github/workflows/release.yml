@@ -58,6 +58,12 @@ jobs:
           brew update
           brew update-python-resources Formula/mct.rb
           
+          # Test installation from the formula
+          brew install --build-from-source ./Formula/mct.rb
+          
+          # Verify the installation by checking the version
+          mct --version
+          
           git add Formula/mct.rb
           git commit -m "Update formula to v${VERSION}"
           git push https://x-access-token:${{ secrets.HOMEBREW_TAP_TOKEN }}@github.com/ocolunga/homebrew-mct.git main

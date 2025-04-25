@@ -13,25 +13,6 @@ jobs:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
 
-      - name: 🐍 Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: 📦 Install build tool
-        run: pip install build
-
-      - name: 📦 Build sdist
-        run: python -m build --sdist
-
-      - name: 🔢 Compute SHA256
-        id: hash
-        run: |
-          FILENAME=$(ls dist/*.tar.gz)
-          SHA=$(shasum -a 256 "$FILENAME" | awk '{print $1}')
-          echo "sha=$SHA" >> $GITHUB_OUTPUT
-          echo "file=$FILENAME" >> $GITHUB_OUTPUT
-
       - name: ⬇️ Clone Homebrew Tap
         run: |
           git clone https://x-access-token:${{ secrets.HOMEBREW_TAP_TOKEN }}@github.com/ocolunga/homebrew-mct.git tap
@@ -39,43 +20,82 @@ jobs:
           git config user.name "github-actions"
           git config user.email "actions@github.com"
 
-      - name: 📝 Update Formula
+      - name: 🐳 Build and Test in Docker
         run: |
-          VERSION=${GITHUB_REF#refs/tags/v}
-          URL="https://github.com/ocolunga/mct/archive/refs/tags/v${VERSION}.tar.gz"
-          SHA="${{ steps.hash.outputs.sha }}"
-
-          FORMULA_FILE="tap/Formula/mct.rb"
-
-          # Update version, URL, and sha256 in the formula
-          sed -i "s|url \".*\"|url \"$URL\"|" "$FORMULA_FILE"
-          sed -i "s|sha256 \".*\"|sha256 \"$SHA\"|" "$FORMULA_FILE"
-
-          # Install Homebrew directly using the recommended approach for CI
-          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-          echo "HOMEBREW_PREFIX=/home/linuxbrew/.linuxbrew" >> $GITHUB_ENV
-          echo "HOMEBREW_CELLAR=/home/linuxbrew/.linuxbrew/Cellar" >> $GITHUB_ENV
-          echo "HOMEBREW_REPOSITORY=/home/linuxbrew/.linuxbrew/Homebrew" >> $GITHUB_ENV
-          echo "/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin" >> $GITHUB_PATH
+          # Create a Dockerfile for testing
+          cat > Dockerfile << 'EOF'
+          FROM ubuntu:latest
           
-          # Install system dependencies
-          sudo apt-get update
-          sudo apt-get install -y build-essential
+          # Set noninteractive installation
+          ENV DEBIAN_FRONTEND=noninteractive
           
-          # Set up Homebrew environment
-          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-          brew developer on
-          brew install gcc
+          # Update and install essential packages
+          RUN apt-get update && apt-get install -y \
+              build-essential \
+              curl \
+              wget \
+              git \
+              vim \
+              sudo \
+              python3 \
+              python3-pip \
+              && apt-get clean \
+              && rm -rf /var/lib/apt/lists/*
           
-          # Update python dependencies in the formula - using the approach that worked in Docker
+          # Create a non-root user with sudo access
+          RUN useradd -m -s /bin/bash testuser && \
+              echo "testuser ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/testuser
+          
+          # Set working directory
+          WORKDIR /home/testuser
+          
+          # Switch to the non-root user
+          USER testuser
+          
+          # Install Homebrew
+          RUN /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+          ENV PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"
+          
+          # Copy the formula file and source code
+          COPY tap/Formula/mct.rb /home/testuser/
+          COPY . /home/testuser/mct
+          
+          # Build the package
+          RUN cd /home/testuser/mct && \
+              pip3 install build && \
+              python3 -m build --sdist
+          
+          # Compute SHA256
+          RUN cd /home/testuser/mct && \
+              FILENAME=$(ls dist/*.tar.gz) && \
+              SHA=$(shasum -a 256 "$FILENAME" | awk '{print $1}') && \
+              echo "SHA=$SHA" > /home/testuser/sha.txt && \
+              echo "FILE=$FILENAME" >> /home/testuser/sha.txt
+          
+          # Update formula with new version and SHA
+          RUN VERSION=$(echo $GITHUB_REF | sed 's/refs\/tags\/v//') && \
+              SHA=$(cat /home/testuser/sha.txt | grep SHA | cut -d'=' -f2) && \
+              sed -i "s|url \".*\"|url \"https://github.com/ocolunga/mct/archive/refs/tags/v${VERSION}.tar.gz\"|" /home/testuser/mct.rb && \
+              sed -i "s|sha256 \".*\"|sha256 \"$SHA\"|" /home/testuser/mct.rb
+          
+          # Update python dependencies
+          RUN brew update-python-resources /home/testuser/mct.rb
+          
+          # Test the formula
+          RUN brew install --build-from-source /home/testuser/mct.rb
+          RUN mct --version
+          
+          # Copy updated formula back
+          RUN cp /home/testuser/mct.rb /home/testuser/tap/Formula/mct.rb
+          EOF
+          
+          # Build and run the Docker container
+          docker build -t mct-test .
+          docker run --rm mct-test
+
+      - name: 📤 Push Changes
+        run: |
           cd tap
-          brew update-python-resources Formula/mct.rb
-          
-          # Test installation to validate formula
-          brew install --build-from-source Formula/mct.rb
-          mct --version
-          
-          # Commit and push changes
           git add Formula/mct.rb
-          git commit -m "Update formula to v${VERSION}"
+          git commit -m "Update formula to v${GITHUB_REF#refs/tags/v}"
           git push https://x-access-token:${{ secrets.HOMEBREW_TAP_TOKEN }}@github.com/ocolunga/homebrew-mct.git main

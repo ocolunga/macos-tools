@@ -28,7 +28,10 @@ jobs:
 
       - name: Set version for manual run
         if: github.event_name == 'workflow_dispatch'
-        run: echo "GITHUB_REF=refs/tags/v${{ github.event.inputs.version }}" >> $GITHUB_ENV
+        run: |
+          echo "GITHUB_REF=refs/tags/v${{ github.event.inputs.version }}" >> $GITHUB_ENV
+          echo "⚠️ TESTING MODE: This is a manual workflow run with version v${{ github.event.inputs.version }}"
+          echo "⚠️ No actual release will be created and no changes will be pushed to the formula repository"
 
       - name: Install dependencies
         run: |
@@ -68,13 +71,18 @@ jobs:
 
       - name: Create GitHub Release
         id: create_release
-        uses: softprops/action-gh-release@v1
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
         with:
           files: dist/*
           body_path: CHANGELOG.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Skip GitHub release errors in workflow_dispatch mode
+      - name: Skip GitHub release for manual runs
+        if: github.event_name == 'workflow_dispatch'
+        run: echo "Skipping GitHub release for manual workflow runs"
 
       - name: Compute SHA256 for Homebrew
         id: hash
@@ -106,6 +114,12 @@ jobs:
           # Print the changes for verification
           echo "Updated Formula:"
           cat "$FORMULA_FILE"
+          
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "📋 Changes to formula (dry run):"
+            cd tap
+            git diff Formula/mct.rb
+          fi
 
       - name: Commit and Push Formula Update
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')

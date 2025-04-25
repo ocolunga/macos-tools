@@ -10,92 +10,78 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 📥 Checkout code
+      - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: ⬇️ Clone Homebrew Tap
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install build twine
+
+      - name: Build package
+        run: python -m build
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          if [ -z "$PREVIOUS_TAG" ]; then
+            git log --pretty=format:"* %s" > CHANGELOG.md
+          else
+            git log --pretty=format:"* %s" $PREVIOUS_TAG..HEAD > CHANGELOG.md
+          fi
+          echo "CHANGELOG<<EOF" >> $GITHUB_OUTPUT
+          cat CHANGELOG.md >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: dist/*
+          body: |
+            ## Changelog
+            ${{ steps.changelog.outputs.CHANGELOG }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compute SHA256 for Homebrew
+        id: hash
+        run: |
+          FILENAME=$(ls dist/*.tar.gz)
+          SHA=$(shasum -a 256 "$FILENAME" | awk '{print $1}')
+          echo "sha=$SHA" >> $GITHUB_OUTPUT
+          echo "file=$FILENAME" >> $GITHUB_OUTPUT
+
+      - name: Clone Homebrew Tap
         run: |
           git clone https://x-access-token:${{ secrets.HOMEBREW_TAP_TOKEN }}@github.com/ocolunga/homebrew-mct.git tap
           cd tap
           git config user.name "github-actions"
           git config user.email "actions@github.com"
 
-      - name: 🐳 Build and Test in Docker
+      - name: Update Formula
         run: |
-          # Create a Dockerfile for testing
-          cat > Dockerfile << 'EOF'
-          FROM ubuntu:latest
-          
-          # Set noninteractive installation
-          ENV DEBIAN_FRONTEND=noninteractive
-          
-          # Update and install essential packages
-          RUN apt-get update && apt-get install -y \
-              build-essential \
-              curl \
-              wget \
-              git \
-              vim \
-              sudo \
-              python3 \
-              python3-pip \
-              && apt-get clean \
-              && rm -rf /var/lib/apt/lists/*
-          
-          # Create a non-root user with sudo access
-          RUN useradd -m -s /bin/bash testuser && \
-              echo "testuser ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/testuser
-          
-          # Set working directory
-          WORKDIR /home/testuser
-          
-          # Switch to the non-root user
-          USER testuser
-          
-          # Install Homebrew
-          RUN /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-          ENV PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"
-          
-          # Copy the formula file and source code
-          COPY tap/Formula/mct.rb /home/testuser/
-          COPY . /home/testuser/mct
-          
-          # Build the package
-          RUN cd /home/testuser/mct && \
-              pip3 install build && \
-              python3 -m build --sdist
-          
-          # Compute SHA256
-          RUN cd /home/testuser/mct && \
-              FILENAME=$(ls dist/*.tar.gz) && \
-              SHA=$(shasum -a 256 "$FILENAME" | awk '{print $1}') && \
-              echo "SHA=$SHA" > /home/testuser/sha.txt && \
-              echo "FILE=$FILENAME" >> /home/testuser/sha.txt
-          
-          # Update formula with new version and SHA
-          RUN VERSION=$(echo $GITHUB_REF | sed 's/refs\/tags\/v//') && \
-              SHA=$(cat /home/testuser/sha.txt | grep SHA | cut -d'=' -f2) && \
-              sed -i "s|url \".*\"|url \"https://github.com/ocolunga/mct/archive/refs/tags/v${VERSION}.tar.gz\"|" /home/testuser/mct.rb && \
-              sed -i "s|sha256 \".*\"|sha256 \"$SHA\"|" /home/testuser/mct.rb
-          
-          # Update python dependencies
-          RUN brew update-python-resources /home/testuser/mct.rb
-          
-          # Test the formula
-          RUN brew install --build-from-source /home/testuser/mct.rb
-          RUN mct --version
-          
-          # Copy updated formula back
-          RUN cp /home/testuser/mct.rb /home/testuser/tap/Formula/mct.rb
-          EOF
-          
-          # Build and run the Docker container
-          docker build -t mct-test .
-          docker run --rm mct-test
+          VERSION=${GITHUB_REF#refs/tags/v}
+          URL="https://github.com/ocolunga/mct/archive/refs/tags/v${VERSION}.tar.gz"
+          SHA="${{ steps.hash.outputs.sha }}"
 
-      - name: 📤 Push Changes
+          FORMULA_FILE="tap/Formula/mct.rb"
+
+          # Update version, URL, and sha256 in the formula
+          sed -i "s|url \".*\"|url \"$URL\"|" "$FORMULA_FILE"
+          sed -i "s|sha256 \".*\"|sha256 \"$SHA\"|" "$FORMULA_FILE"
+
+      - name: Commit and Push Formula Update
         run: |
           cd tap
           git add Formula/mct.rb
           git commit -m "Update formula to v${GITHUB_REF#refs/tags/v}"
-          git push https://x-access-token:${{ secrets.HOMEBREW_TAP_TOKEN }}@github.com/ocolunga/homebrew-mct.git main
+          git push

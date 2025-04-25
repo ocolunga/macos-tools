@@ -51,28 +51,31 @@ jobs:
           sed -i "s|url \".*\"|url \"$URL\"|" "$FORMULA_FILE"
           sed -i "s|sha256 \".*\"|sha256 \"$SHA\"|" "$FORMULA_FILE"
 
-          # Install Homebrew and set up the environment
+          # Install Homebrew directly using the recommended approach for CI
           /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-          echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> $HOME/.bashrc
-          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+          echo "HOMEBREW_PREFIX=/home/linuxbrew/.linuxbrew" >> $GITHUB_ENV
+          echo "HOMEBREW_CELLAR=/home/linuxbrew/.linuxbrew/Cellar" >> $GITHUB_ENV
+          echo "HOMEBREW_REPOSITORY=/home/linuxbrew/.linuxbrew/Homebrew" >> $GITHUB_ENV
+          echo "/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin" >> $GITHUB_PATH
           
-          # Install dependencies
+          # Install system dependencies
           sudo apt-get update
           sudo apt-get install -y build-essential
+          
+          # Set up Homebrew environment
+          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
           brew developer on
           brew install gcc
           
-          # Update python dependencies in the formula
+          # Update python dependencies in the formula - using the approach that worked in Docker
           cd tap
-          brew install --only-dependencies ./Formula/mct.rb || true
-          brew update-python-resources --package-name=mct --exclude-packages="" ./Formula/mct.rb || true
+          brew update-python-resources Formula/mct.rb
           
-          # Test installation from the formula
-          brew install --build-from-source ./Formula/mct.rb
-          
-          # Verify the installation by checking the version
+          # Test installation to validate formula
+          brew install --build-from-source Formula/mct.rb
           mct --version
           
+          # Commit and push changes
           git add Formula/mct.rb
           git commit -m "Update formula to v${VERSION}"
           git push https://x-access-token:${{ secrets.HOMEBREW_TAP_TOKEN }}@github.com/ocolunga/homebrew-mct.git main

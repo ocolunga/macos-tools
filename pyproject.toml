@@ -1,6 +1,6 @@
 [project]
 name = "mct"
-version = "0.1.6"
+version = "0.1.1"
 authors = [{ name = "Oscar Colunga", email = "oscar@ancile.dev" }]
 description = "macOS Configuration Tools"
 readme = "README.md"
